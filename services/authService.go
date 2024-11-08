@@ -5,10 +5,10 @@ import (
 	"log"
 	"time"
 
-	validations "github.com/Safiramdhn/project-app-inventaris-golang-safira"
 	"github.com/Safiramdhn/project-app-inventaris-golang-safira/models"
 	"github.com/Safiramdhn/project-app-inventaris-golang-safira/repositories"
 	"github.com/Safiramdhn/project-app-inventaris-golang-safira/utils"
+	"github.com/Safiramdhn/project-app-inventaris-golang-safira/validations"
 )
 
 type AuthService struct {

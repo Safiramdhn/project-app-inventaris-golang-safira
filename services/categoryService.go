@@ -72,7 +72,7 @@ func (cs *CategoryService) GetCategoryByID(id int) (*models.Category, error) {
 	if id <= 0 {
 		return nil, errors.New("invalid category id")
 	}
-	category, err := cs.CategoryRepo.FindById(id)
+	category, err := cs.CategoryRepo.FindByID(id)
 	if err != nil {
 		log.Printf("Failed to get category by ID: %v", err) // Log the error
 		return nil, err

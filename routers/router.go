@@ -19,8 +19,12 @@ func NewRouter() chi.Router {
 	AuthHandler := handlers.NewAuthHandler(authService)
 
 	categoryRepo := repositories.NewCategoryRepository(db)
-	categoryService := services.NewCategoryService(*categoryRepo)
+	categoryService := services.NewCategoryService(categoryRepo)
 	CategoryHandler := handlers.NewCategoryHandler(categoryService)
+
+	itemRepo := repositories.NewItemRepository(db)
+	itemService := services.NewItemService(itemRepo)
+	itemHandler := handlers.NewItemHandler(itemService)
 
 	// Initialize router
 	r.Route("/api", func(r chi.Router) {
@@ -35,6 +39,14 @@ func NewRouter() chi.Router {
 			r.With(middlewares.AuthMiddleware).Delete("/{id}", CategoryHandler.DeleteCategoryHandler)
 			r.With(middlewares.AuthMiddleware).Get("/", CategoryHandler.GetCategoriesHandler)
 			r.With(middlewares.AuthMiddleware).Get("/{id}", CategoryHandler.GetCategoryByIDHandler)
+		})
+
+		r.Route("/items", func(r chi.Router) {
+			r.With(middlewares.AuthMiddleware).Post("/", itemHandler.CreateItemHandler)
+			r.With(middlewares.AuthMiddleware).Get("/{id}", itemHandler.GetItemByIDHandler)
+			r.With(middlewares.AuthMiddleware).Put("/{id}", itemHandler.UpdateItemHandler)
+			r.With(middlewares.AuthMiddleware).Delete("/{id}", itemHandler.DeleteItemHandler)
+			r.With(middlewares.AuthMiddleware).Get("/", itemHandler.GetAllItemsHandler)
 		})
 
 	})

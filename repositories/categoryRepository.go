@@ -12,17 +12,25 @@ import (
 	"github.com/Safiramdhn/project-app-inventaris-golang-safira/models"
 )
 
-type CategoryRepository struct {
+type CategoryRepository interface {
+	Create(categoryInput *models.Category) (*models.Category, error)
+	Update(categoryInput *models.Category) (*models.Category, error)
+	Delete(id int) error
+	FindAll() ([]models.Category, error)
+	FindByID(id int) (*models.Category, error)
+}
+
+type categoryRepository struct {
 	DB *sql.DB
 }
 
 // NewCategoryRepository creates a new instance of CategoryRepository
-func NewCategoryRepository(db *sql.DB) *CategoryRepository {
-	return &CategoryRepository{DB: db}
+func NewCategoryRepository(db *sql.DB) CategoryRepository {
+	return &categoryRepository{DB: db}
 }
 
-// Create inserts a new category into the database
-func (c *CategoryRepository) Create(categoryInput *models.Category) (*models.Category, error) {
+// Create implements CategoryRepository.
+func (c *categoryRepository) Create(categoryInput *models.Category) (*models.Category, error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
@@ -55,7 +63,76 @@ func (c *CategoryRepository) Create(categoryInput *models.Category) (*models.Cat
 	return categoryInput, nil
 }
 
-func (c *CategoryRepository) Update(categoryInput *models.Category) (*models.Category, error) {
+// Delete implements CategoryRepository.
+func (c *categoryRepository) Delete(id int) error {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		log.Printf("Error starting transaction: %v", err)
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p) // Re-panic after rollback
+		} else if err != nil {
+			log.Printf("Rolling back transaction due to error: %v", err)
+			tx.Rollback()
+		}
+	}()
+
+	sqlStatement := `UPDATE categories SET status = 'deleted' WHERE id = $1`
+	_, err = tx.Exec(sqlStatement, id)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+// FindAll implements CategoryRepository.
+func (c *categoryRepository) FindAll() ([]models.Category, error) {
+	var categories []models.Category
+	sqlStatement := `SELECT id, name, description FROM categories WHERE status = 'active'`
+	rows, err := c.DB.Query(sqlStatement)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var category models.Category
+		err := rows.Scan(&category.ID, &category.Name, &category.Description)
+		if err != nil {
+			return nil, err
+		}
+		categories = append(categories, category)
+	}
+
+	return categories, nil
+}
+
+// FindByID implements CategoryRepository.
+func (c *categoryRepository) FindByID(id int) (*models.Category, error) {
+	var category models.Category
+	sqlStatement := `SELECT id, name, description FROM categories WHERE id = $1 AND status = 'active'`
+	err := c.DB.QueryRow(sqlStatement, id).Scan(&category.ID, &category.Name, &category.Description)
+	if err == sql.ErrNoRows {
+		return nil, errors.New("category does not exist")
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &category, nil
+}
+
+// Update implements CategoryRepository.
+func (c *categoryRepository) Update(categoryInput *models.Category) (*models.Category, error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
@@ -116,69 +193,4 @@ func (c *CategoryRepository) Update(categoryInput *models.Category) (*models.Cat
 
 	// Return the updated category
 	return &updatedCategory, nil
-}
-
-func (c *CategoryRepository) Delete(id int) error {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
-		return err
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback()
-			panic(p) // Re-panic after rollback
-		} else if err != nil {
-			log.Printf("Rolling back transaction due to error: %v", err)
-			tx.Rollback()
-		}
-	}()
-
-	sqlStatement := `UPDATE categories SET status = 'deleted' WHERE id = $1`
-	_, err = tx.Exec(sqlStatement, id)
-	if err != nil {
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing transaction: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-func (c *CategoryRepository) FindById(id int) (*models.Category, error) {
-	var category models.Category
-	sqlStatement := `SELECT id, name, description FROM categories WHERE id = $1 AND status = 'active'`
-	err := c.DB.QueryRow(sqlStatement, id).Scan(&category.ID, &category.Name, &category.Description)
-	if err == sql.ErrNoRows {
-		return nil, errors.New("category does not exist")
-	} else if err != nil {
-		return nil, err
-	}
-
-	return &category, nil
-}
-
-func (c *CategoryRepository) FindAll() ([]models.Category, error) {
-	var categories []models.Category
-	sqlStatement := `SELECT id, name, description FROM categories WHERE status = 'active'`
-	rows, err := c.DB.Query(sqlStatement)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var category models.Category
-		err := rows.Scan(&category.ID, &category.Name, &category.Description)
-		if err != nil {
-			return nil, err
-		}
-		categories = append(categories, category)
-	}
-
-	return categories, nil
 }

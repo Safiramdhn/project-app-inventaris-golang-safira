@@ -110,8 +110,7 @@ go run main.go
     "photo": "data:image/jpeg;base64,..."
   }
   ```
-  _Note: The photo field should contain the file data in base64 format. In a real application, this would typically be handled as a multipart form upload.
-_
+  _Note: The photo field should contain the file data in base64 format. In a real application, this would typically be handled as a multipart form upload._
 - PUT /api/items/{id}: Update an existing item.
   Request Body:
   ```

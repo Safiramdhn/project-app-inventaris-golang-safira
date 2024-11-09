@@ -26,6 +26,10 @@ func NewRouter() chi.Router {
 	itemService := services.NewItemService(itemRepo)
 	itemHandler := handlers.NewItemHandler(itemService)
 
+	itemInvesmentRepo := repositories.NewItemInvestmentRepository(db)
+	itemInvesmentService := services.NewItemInvestmentService(itemInvesmentRepo)
+	itemInvesmentHandler := handlers.NewItemInvestmentHandler(*itemInvesmentService)
+
 	// Initialize router
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
@@ -47,6 +51,12 @@ func NewRouter() chi.Router {
 			r.With(middlewares.AuthMiddleware).Put("/{id}", itemHandler.UpdateItemHandler)
 			r.With(middlewares.AuthMiddleware).Delete("/{id}", itemHandler.DeleteItemHandler)
 			r.With(middlewares.AuthMiddleware).Get("/", itemHandler.GetAllItemsHandler)
+			r.With(middlewares.AuthMiddleware).Get("/need-replacement", itemHandler.GetReplacementItemsHandler)
+
+			r.Route("/investment", func(r chi.Router) {
+				r.With(middlewares.AuthMiddleware).Get("/", itemInvesmentHandler.CountAllItemInvestmentsHandler)
+				r.With(middlewares.AuthMiddleware).Get("/{id}", itemInvesmentHandler.GetItemInvesmentByItemIdHandler)
+			})
 		})
 
 	})

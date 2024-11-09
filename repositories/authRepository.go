@@ -30,7 +30,7 @@ func NewAuthRepository(db *sql.DB) AuthRepository {
 func (a *authRepository) CreateSession(sessionInput *models.Session) (*models.Session, error) {
 	tx, err := a.DB.Begin()
 	if err != nil {
-		log.Printf("Error starting register transaction: %v\n", err)
+		log.Printf("Error starting register transaction: %v\n", err.Error())
 		return nil, err
 	}
 
@@ -46,11 +46,11 @@ func (a *authRepository) CreateSession(sessionInput *models.Session) (*models.Se
 	sqlStatement := `INSERT INTO sessions (user_id, session_token, expires_at) VALUES ($1, $2, $3) RETURNING session_token`
 	err = tx.QueryRow(sqlStatement, sessionInput.UserID, sessionInput.SessionToken, sessionInput.ExpiresAt).Scan(&sessionInput.SessionToken)
 	if err != nil {
-		log.Printf("Error inserting session: %v\n", err)
+		log.Printf("Error inserting session: %v\n", err.Error())
 		return nil, err
 	}
 	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing register transaction: %v\n", err)
+		log.Printf("Error committing register transaction: %v\n", err.Error())
 		return nil, err
 	}
 	return sessionInput, nil
@@ -60,7 +60,7 @@ func (a *authRepository) CreateSession(sessionInput *models.Session) (*models.Se
 func (a *authRepository) InvalidateSession(sessionToken string) error {
 	tx, err := a.DB.Begin()
 	if err != nil {
-		log.Printf("Error starting invalidate transaction: %v\n", err)
+		log.Printf("Error starting invalidate transaction: %v\n", err.Error())
 		return err
 	}
 
@@ -76,13 +76,13 @@ func (a *authRepository) InvalidateSession(sessionToken string) error {
 	updateStatement := `UPDATE sessions SET is_active = false WHERE session_token = $1`
 	result, err := tx.Exec(updateStatement, sessionToken)
 	if err != nil {
-		log.Printf("Error updating session: %v\n", err)
+		log.Printf("Error updating session: %v\n", err.Error())
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		log.Printf("Error fetching rows affected: %v\n", err)
+		log.Printf("Error fetching rows affected: %v\n", err.Error())
 		return err
 	}
 	if rowsAffected == 0 {
@@ -91,7 +91,7 @@ func (a *authRepository) InvalidateSession(sessionToken string) error {
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing validate session transaction: %v\n", err)
+		log.Printf("Error committing validate session transaction: %v\n", err.Error())
 		return err
 	}
 	return nil
@@ -106,7 +106,7 @@ func (a *authRepository) Login(loginRequest *models.LoginRequest) (*models.User,
 		log.Println("User not found")
 		return nil, errors.New("user not found")
 	} else if err != nil {
-		log.Printf("Error querying user: %v\n", err)
+		log.Printf("Error querying user: %v\n", err.Error())
 		return nil, err
 	}
 	return &user, nil
@@ -121,7 +121,7 @@ func (a *authRepository) RefreshSession(oldSessionToken string) (*models.Session
 func (a *authRepository) Register(userDTO *models.UserDTO) (*models.User, error) {
 	tx, err := a.DB.Begin()
 	if err != nil {
-		log.Printf("Error starting register transaction: %v\n", err)
+		log.Printf("Error starting register transaction: %v\n", err.Error())
 		return nil, err
 	}
 
@@ -138,11 +138,11 @@ func (a *authRepository) Register(userDTO *models.UserDTO) (*models.User, error)
 	sqlStatement := `INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, email`
 	err = tx.QueryRow(sqlStatement, userDTO.Username, userDTO.Email, userDTO.Password).Scan(&user.ID, &user.Email)
 	if err != nil {
-		log.Printf("Error inserting user: %v\n", err)
+		log.Printf("Error inserting user: %v\n", err.Error())
 		return nil, err
 	}
 	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing register transaction: %v\n", err)
+		log.Printf("Error committing register transaction: %v\n", err.Error())
 		return nil, err
 	}
 	return &user, nil
@@ -161,7 +161,7 @@ func (a *authRepository) ValidateSession(sessionToken string) (*models.Session, 
 		if err == sql.ErrNoRows {
 			return nil, errors.New("invalid session token")
 		}
-		log.Printf("Error querying session: %v\n", err)
+		log.Printf("Error querying session: %v\n", err.Error())
 		return nil, err
 	}
 
@@ -169,7 +169,7 @@ func (a *authRepository) ValidateSession(sessionToken string) (*models.Session, 
 	if session.ExpiresAt.Before(time.Now()) {
 		// Invalidate the expired session
 		if err := a.InvalidateSession(session.SessionToken); err != nil {
-			log.Printf("Error invalidating expired session: %v\n", err)
+			log.Printf("Error invalidating expired session: %v\n", err.Error())
 			return nil, err
 		}
 		return nil, errors.New("session expired")

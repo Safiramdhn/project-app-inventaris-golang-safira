@@ -26,7 +26,7 @@ func (cs *CategoryService) CreateCategory(categoryInput models.Category) (*model
 	// Attempt to create the category
 	category, err := cs.CategoryRepo.Create(&categoryInput)
 	if err != nil {
-		log.Printf("Failed to create category: %v", err) // Log the error
+		log.Printf("Failed to create category: %v", err.Error()) // Log the error
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func (cs *CategoryService) UpdateCategory(categoryInput models.Category) (*model
 	// Attempt to update the category
 	category, err := cs.CategoryRepo.Update(&categoryInput)
 	if err != nil {
-		log.Printf("Failed to update category: %v", err) // Log the error
+		log.Printf("Failed to update category: %v", err.Error()) // Log the error
 		return nil, err
 	}
 
@@ -60,7 +60,7 @@ func (cs *CategoryService) DeleteCategory(id int) error {
 	// Attempt to delete the category
 	err := cs.CategoryRepo.Delete(id)
 	if err != nil {
-		log.Printf("Failed to delete category: %v", err) // Log the error
+		log.Printf("Failed to delete category: %v", err.Error()) // Log the error
 		return err
 	}
 
@@ -74,7 +74,7 @@ func (cs *CategoryService) GetCategoryByID(id int) (*models.Category, error) {
 	}
 	category, err := cs.CategoryRepo.FindByID(id)
 	if err != nil {
-		log.Printf("Failed to get category by ID: %v", err) // Log the error
+		log.Printf("Failed to get category by ID: %v", err.Error()) // Log the error
 		return nil, err
 	}
 	return category, nil

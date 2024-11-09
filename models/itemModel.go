@@ -12,4 +12,5 @@ type Item struct {
 	PurchaseDate        time.Time `json:"purchase_date,omitempty"`
 	TotalUsageDays      int       `json:"total_usage_days,omitempty"`
 	IsReplacementNeeded bool      `json:"is_replacement_needed,omitempty"`
+	DepreciatedRate     int       `json:"depresiated_rate,omitempty"`
 }

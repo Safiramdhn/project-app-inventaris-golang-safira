@@ -44,13 +44,18 @@ func (s *ItemService) UpdateItem(itemInput models.Item) (*models.Item, error) {
 	return s.ItemRepo.Update(&itemInput)
 }
 
-func (s *ItemService) DeleteItem(id int) error {
+func (s *ItemService) DeleteItem(id int) (string, error) {
 	if id == 0 {
-		return errors.New("invalid id")
+		return "", errors.New("invalid id")
 	}
 	return s.ItemRepo.Delete(id)
 }
 
 func (s *ItemService) GetAllItems() ([]models.Item, error) {
 	return s.ItemRepo.FindAll()
+}
+
+func (s *ItemService) GetReplacementItems() ([]models.Item, error) {
+	threshold := 100
+	return s.ItemRepo.ReplaceReminder(threshold)
 }

@@ -57,7 +57,7 @@ func (as *AuthService) LoginUser(loginRequest *models.LoginRequest) (*models.Ses
 
 	session, err := as.AuthRepo.CreateSession(&sessionInput)
 	if err != nil {
-		log.Printf("error creating session: %v\n", err)
+		log.Printf("error creating session: %v\n", err.Error())
 		return nil, err
 	}
 	return session, nil

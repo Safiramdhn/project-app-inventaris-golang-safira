@@ -33,7 +33,7 @@ func NewCategoryRepository(db *sql.DB) CategoryRepository {
 func (c *categoryRepository) Create(categoryInput *models.Category) (*models.Category, error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
+		log.Printf("Error starting transaction: %v", err.Error())
 		return nil, err
 	}
 
@@ -42,7 +42,7 @@ func (c *categoryRepository) Create(categoryInput *models.Category) (*models.Cat
 			tx.Rollback()
 			panic(p) // Re-panic after rollback
 		} else if err != nil {
-			log.Printf("Rolling back transaction due to error: %v", err)
+			log.Printf("Rolling back transaction due to error: %v", err.Error())
 			tx.Rollback()
 		}
 	}()
@@ -50,12 +50,12 @@ func (c *categoryRepository) Create(categoryInput *models.Category) (*models.Cat
 	sqlStatement := `INSERT INTO categories (name, description) VALUES ($1, $2) RETURNING id`
 	err = tx.QueryRow(sqlStatement, categoryInput.Name, categoryInput.Description).Scan(&categoryInput.ID)
 	if err != nil {
-		log.Printf("Error inserting category: %v", err)
+		log.Printf("Error inserting category: %v", err.Error())
 		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing transaction: %v", err)
+		log.Printf("Error committing transaction: %v", err.Error())
 		return nil, err
 	}
 
@@ -67,7 +67,7 @@ func (c *categoryRepository) Create(categoryInput *models.Category) (*models.Cat
 func (c *categoryRepository) Delete(id int) error {
 	tx, err := c.DB.Begin()
 	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
+		log.Printf("Error starting transaction: %v", err.Error())
 		return err
 	}
 
@@ -76,7 +76,7 @@ func (c *categoryRepository) Delete(id int) error {
 			tx.Rollback()
 			panic(p) // Re-panic after rollback
 		} else if err != nil {
-			log.Printf("Rolling back transaction due to error: %v", err)
+			log.Printf("Rolling back transaction due to error: %v", err.Error())
 			tx.Rollback()
 		}
 	}()
@@ -88,7 +88,7 @@ func (c *categoryRepository) Delete(id int) error {
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing transaction: %v", err)
+		log.Printf("Error committing transaction: %v", err.Error())
 		return err
 	}
 
@@ -135,7 +135,7 @@ func (c *categoryRepository) FindByID(id int) (*models.Category, error) {
 func (c *categoryRepository) Update(categoryInput *models.Category) (*models.Category, error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
+		log.Printf("Error starting transaction: %v", err.Error())
 		return nil, err
 	}
 
@@ -144,7 +144,7 @@ func (c *categoryRepository) Update(categoryInput *models.Category) (*models.Cat
 			tx.Rollback()
 			panic(p) // Re-panic after rollback
 		} else if err != nil {
-			log.Printf("Rolling back transaction due to error: %v", err)
+			log.Printf("Rolling back transaction due to error: %v", err.Error())
 			tx.Rollback()
 		}
 	}()
@@ -181,13 +181,13 @@ func (c *categoryRepository) Update(categoryInput *models.Category) (*models.Cat
 	var updatedCategory models.Category
 	err = tx.QueryRow(sqlStatement, values...).Scan(&updatedCategory.ID, &updatedCategory.Name, &updatedCategory.Description)
 	if err != nil {
-		log.Printf("Error updating category: %v", err)
+		log.Printf("Error updating category: %v", err.Error())
 		return nil, err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing transaction: %v", err)
+		log.Printf("Error committing transaction: %v", err.Error())
 		return nil, err
 	}
 

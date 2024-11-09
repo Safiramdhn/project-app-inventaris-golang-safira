@@ -1,5 +1,5 @@
 # Project Inventaris Golang
-##Overview
+## Overview
 This project is a Golang-based inventory management system that allows users to manage categories and items, track investments in items, and handle user authentication. The application uses PostgreSQL as the database and follows a structured architecture with separate layers for models, repositories, services, and handlers.
 
 ## Features

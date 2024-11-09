@@ -3,16 +3,16 @@ package models
 import "time"
 
 type User struct {
-	ID           int
-	Username     string
-	Email        string
+	ID           int    `json:"user_id,omitempty"`
+	Username     string `json:"username,omitempty"`
+	Email        string `json:"email,omitempty"`
 	PasswordHash string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
 type UserDTO struct {
-	Username string
-	Email    string
-	Password string
+	Username string `json:"username,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
 }

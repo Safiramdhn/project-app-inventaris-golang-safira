@@ -1,14 +1,14 @@
 package models
 
-type ResponseStatus string
+type ResponseStatus bool
 
 const (
-	StatusSuccess ResponseStatus = "success"
-	StatusError   ResponseStatus = "error"
+	StatusSuccess ResponseStatus = true
+	StatusError   ResponseStatus = false
 )
 
 type StandardResponse struct {
-	Status  ResponseStatus `json:"status"`
+	Success ResponseStatus `json:"success"`
 	Message string         `json:"message,omitempty"`
 	Data    interface{}    `json:"data,omitempty"`
 	Errors  interface{}    `json:"errors,omitempty"`

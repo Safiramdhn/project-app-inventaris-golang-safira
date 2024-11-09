@@ -62,3 +62,7 @@ func (as *AuthService) LoginUser(loginRequest *models.LoginRequest) (*models.Ses
 	}
 	return session, nil
 }
+
+func (as *AuthService) GetSession(sessionToken string) (*models.Session, error) {
+	return as.AuthRepo.ValidateSession(sessionToken)
+}

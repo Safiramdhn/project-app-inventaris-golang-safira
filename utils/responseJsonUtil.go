@@ -12,8 +12,8 @@ type JSONResponse struct{}
 // SendSuccess sends a successful JSON response
 func (j *JSONResponse) SendSuccess(w http.ResponseWriter, data interface{}, message ...string) {
 	response := models.StandardResponse{
-		Status: models.StatusSuccess,
-		Data:   data,
+		Success: models.StatusSuccess,
+		Data:    data,
 	}
 
 	if len(message) > 0 {
@@ -26,8 +26,8 @@ func (j *JSONResponse) SendSuccess(w http.ResponseWriter, data interface{}, mess
 // SendCreated sends a JSON response for resource creation
 func (j *JSONResponse) SendCreated(w http.ResponseWriter, data interface{}, message ...string) {
 	response := models.StandardResponse{
-		Status: models.StatusSuccess,
-		Data:   data,
+		Success: models.StatusSuccess,
+		Data:    data,
 	}
 
 	defaultMessage := "Resource created successfully"
@@ -42,7 +42,7 @@ func (j *JSONResponse) SendCreated(w http.ResponseWriter, data interface{}, mess
 // SendError sends an error JSON response
 func (j *JSONResponse) SendError(w http.ResponseWriter, statusCode int, message string, errors ...interface{}) {
 	response := models.StandardResponse{
-		Status:  models.StatusError,
+		Success: models.StatusError,
 		Message: message,
 	}
 
@@ -62,8 +62,8 @@ func (j *JSONResponse) SendPaginatedResponse(
 ) {
 	response := models.PaginatedResponse{
 		StandardResponse: models.StandardResponse{
-			Status: models.StatusSuccess,
-			Data:   data,
+			Success: models.StatusSuccess,
+			Data:    data,
 		},
 		Page:       page,
 		Limit:      limit,

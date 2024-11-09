@@ -56,5 +56,12 @@ func (ah *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		JsonResp.SendError(w, http.StatusUnauthorized, "Invalid credentials", err.Error())
 		return
 	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token.SessionToken,
+		HttpOnly: true,
+		Path:     "/",
+	})
 	JsonResp.SendSuccess(w, token, "User logged in")
 }

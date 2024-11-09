@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
 	"log"
+	"time"
 
 	"github.com/Safiramdhn/project-app-inventaris-golang-safira/models"
 )
@@ -11,21 +13,21 @@ type AuthRepository interface {
 	Register(userDTO *models.UserDTO) (*models.User, error)
 	Login(loginRequest *models.LoginRequest) (*models.User, error)
 	CreateSession(sessionInput *models.Session) (*models.Session, error)
-	ValidateSession(sessionToken string) (*models.User, error)
+	ValidateSession(sessionToken string) (*models.Session, error)
 	InvalidateSession(sessionToken string) error
 	RefreshSession(oldSessionToken string) (*models.Session, error)
 }
 
-type authRepositoryImpl struct {
+type authRepository struct {
 	DB *sql.DB
 }
 
 func NewAuthRepository(db *sql.DB) AuthRepository {
-	return &authRepositoryImpl{DB: db}
+	return &authRepository{DB: db}
 }
 
 // CreateSession implements AuthRepository.
-func (a *authRepositoryImpl) CreateSession(sessionInput *models.Session) (*models.Session, error) {
+func (a *authRepository) CreateSession(sessionInput *models.Session) (*models.Session, error) {
 	tx, err := a.DB.Begin()
 	if err != nil {
 		log.Printf("Error starting register transaction: %v\n", err)
@@ -41,7 +43,7 @@ func (a *authRepositoryImpl) CreateSession(sessionInput *models.Session) (*model
 		}
 	}()
 
-	sqlStatement := `INSERT INTO sessions VALUES (user_id, session_token, expired_at) VALUES ($1, $2, $3) RETURNING session_token`
+	sqlStatement := `INSERT INTO sessions (user_id, session_token, expires_at) VALUES ($1, $2, $3) RETURNING session_token`
 	err = tx.QueryRow(sqlStatement, sessionInput.UserID, sessionInput.SessionToken, sessionInput.ExpiresAt).Scan(&sessionInput.SessionToken)
 	if err != nil {
 		log.Printf("Error inserting session: %v\n", err)
@@ -55,17 +57,54 @@ func (a *authRepositoryImpl) CreateSession(sessionInput *models.Session) (*model
 }
 
 // InvalidateSession implements AuthRepository.
-func (a *authRepositoryImpl) InvalidateSession(sessionToken string) error {
-	panic("unimplemented")
+func (a *authRepository) InvalidateSession(sessionToken string) error {
+	tx, err := a.DB.Begin()
+	if err != nil {
+		log.Printf("Error starting invalidate transaction: %v\n", err)
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	updateStatement := `UPDATE sessions SET is_active = false WHERE session_token = $1`
+	result, err := tx.Exec(updateStatement, sessionToken)
+	if err != nil {
+		log.Printf("Error updating session: %v\n", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Error fetching rows affected: %v\n", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		log.Println("Session not found")
+		return errors.New("session not found")
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("Error committing validate session transaction: %v\n", err)
+		return err
+	}
+	return nil
 }
 
 // Login implements AuthRepository.
-func (a *authRepositoryImpl) Login(loginRequest *models.LoginRequest) (*models.User, error) {
+func (a *authRepository) Login(loginRequest *models.LoginRequest) (*models.User, error) {
 	sqlStatement := `SELECT id, username, email, password_hash FROM users WHERE username=$1`
 	var user models.User
-	err := a.DB.QueryRow(sqlStatement, loginRequest.Username, loginRequest.Password).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+	err := a.DB.QueryRow(sqlStatement, loginRequest.Username).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
 	if err == sql.ErrNoRows {
-		return nil, nil
+		log.Println("User not found")
+		return nil, errors.New("user not found")
 	} else if err != nil {
 		log.Printf("Error querying user: %v\n", err)
 		return nil, err
@@ -74,12 +113,12 @@ func (a *authRepositoryImpl) Login(loginRequest *models.LoginRequest) (*models.U
 }
 
 // RefreshSession implements AuthRepository.
-func (a *authRepositoryImpl) RefreshSession(oldSessionToken string) (*models.Session, error) {
+func (a *authRepository) RefreshSession(oldSessionToken string) (*models.Session, error) {
 	panic("unimplemented")
 }
 
 // Register implements AuthRepository.
-func (a *authRepositoryImpl) Register(userDTO *models.UserDTO) (*models.User, error) {
+func (a *authRepository) Register(userDTO *models.UserDTO) (*models.User, error) {
 	tx, err := a.DB.Begin()
 	if err != nil {
 		log.Printf("Error starting register transaction: %v\n", err)
@@ -110,6 +149,32 @@ func (a *authRepositoryImpl) Register(userDTO *models.UserDTO) (*models.User, er
 }
 
 // ValidateSession implements AuthRepository.
-func (a *authRepositoryImpl) ValidateSession(sessionToken string) (*models.User, error) {
-	panic("unimplemented")
+func (a *authRepository) ValidateSession(sessionToken string) (*models.Session, error) {
+	// Prepare SQL statement
+	sqlStatement := `SELECT session_token, user_id, expires_at FROM sessions WHERE session_token = $1`
+
+	var session models.Session
+
+	// Execute the query
+	err := a.DB.QueryRow(sqlStatement, sessionToken).Scan(&session.SessionToken, &session.UserID, &session.ExpiresAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("invalid session token")
+		}
+		log.Printf("Error querying session: %v\n", err)
+		return nil, err
+	}
+
+	// Check if the session has expired
+	if session.ExpiresAt.Before(time.Now()) {
+		// Invalidate the expired session
+		if err := a.InvalidateSession(session.SessionToken); err != nil {
+			log.Printf("Error invalidating expired session: %v\n", err)
+			return nil, err
+		}
+		return nil, errors.New("session expired")
+	}
+
+	// Return the valid session
+	return &session, nil
 }
